@@ -44,8 +44,10 @@ jobs:
     name: Run Android Tests (UiAutomator2)
     # Chạy khi push/PR hoặc khi người dùng chọn 'android_emulator' hoặc 'both'
     if: github.event_name != 'workflow_dispatch' || github.event.inputs.platform == 'android_emulator' || github.event.inputs.platform == 'both'
-    runs-on: macos-13
-    timeout-minutes: 40
+    # Sử dụng ubuntu-latest: Luôn có sẵn máy ngay lập tức (pick trong 3 giây), 
+    # hoàn toàn miễn phí cho cả Private và Public repo, có KVM tăng tốc Android Emulator.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: 1. Checkout Source Code
@@ -87,7 +89,13 @@ jobs:
             sleep 2
           done
 
-      - name: 6. Cache Android AVD Image (Tối ưu thời gian tải)
+      - name: 6. Enable KVM Hardware Acceleration
+        run: |
+          echo "Kiểm tra quyền ảo hoá phần cứng KVM..."
+          ls -la /dev/kvm || true
+          sudo chmod 666 /dev/kvm || true
+
+      - name: 7. Cache Android AVD Image (Tối ưu thời gian tải)
         uses: actions/cache@v4
         id: avd-cache
         with:
@@ -96,7 +104,7 @@ jobs:
             ~/.android/adb*
           key: avd-${{ github.event.inputs.android_api || '30' }}
 
-      - name: 7. Launch Android Emulator & Execute Tests
+      - name: 8. Launch Android Emulator & Execute Tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ github.event.inputs.android_api || '30' }}
@@ -119,12 +127,12 @@ jobs:
               -Dappium.url=http://127.0.0.1:4723 \
               -Dmaven.test.failure.ignore=true
 
-      - name: 8. Generate Allure Report
+      - name: 9. Generate Allure Report
         if: always()
         run: |
           mvn allure:report -Dmaven.test.failure.ignore=true
 
-      - name: 9. Upload Android Test Artifacts
+      - name: 10. Upload Android Test Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -145,8 +153,8 @@ jobs:
     name: Run iOS Tests (XCUITest)
     # Chạy khi người dùng chọn 'ios_simulator' hoặc 'both'
     if: github.event.inputs.platform == 'ios_simulator' || github.event.inputs.platform == 'both'
-    # Sử dụng macOS runner có sẵn Xcode & iOS Simulators cài sẵn
-    runs-on: macos-14
+    # Sử dụng macos-latest (Apple Silicon M1/M2)
+    runs-on: macos-latest
     timeout-minutes: 40
 
     steps:
