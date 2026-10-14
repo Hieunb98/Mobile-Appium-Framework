@@ -1,0 +1,247 @@
+name: Mobile Appium Automation Tests (Android & iOS)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Chọn nền tảng kiểm thử di động'
+        required: true
+        default: 'android_emulator'
+        type: choice
+        options:
+          - android_emulator
+          - ios_simulator
+          - both
+      ios_device:
+        description: 'Tên dòng máy iPhone Simulator (dành cho iOS)'
+        required: true
+        default: 'iPhone 15'
+        type: choice
+        options:
+          - 'iPhone 15'
+          - 'iPhone 14'
+          - 'iPhone 15 Pro'
+          - 'iPhone 16'
+      android_api:
+        description: 'Android API Level (dành cho Android)'
+        required: true
+        default: '30'
+        type: choice
+        options:
+          - '29'
+          - '30'
+          - '31'
+
+jobs:
+  # =========================================================================
+  # JOB 1: CHẠY MOBILE TEST TRÊN ANDROID EMULATOR (UIAUTOMATOR2)
+  # =========================================================================
+  android-test:
+    name: Run Android Tests (UiAutomator2)
+    # Chạy khi push/PR hoặc khi người dùng chọn 'android_emulator' hoặc 'both'
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.platform == 'android_emulator' || github.event.inputs.platform == 'both'
+    runs-on: macos-13
+    timeout-minutes: 40
+
+    steps:
+      - name: 1. Checkout Source Code
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: 2. Set up Java JDK 17 (Eclipse Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+
+      - name: 3. Set up Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 4. Install Appium & UiAutomator2 Driver
+        run: |
+          echo "📦 Cài đặt Appium và UiAutomator2 driver..."
+          npm install -g appium
+          appium driver install uiautomator2
+          appium --version
+          appium driver list
+
+      - name: 5. Start Appium Server in Background
+        run: |
+          echo "🚀 Khởi chạy Appium Server port 4723..."
+          appium --port 4723 --log appium-android.log --relaxed-security &
+          
+          echo "⏳ Chờ Appium Server phản hồi..."
+          for i in {1..30}; do
+            if curl -s http://127.0.0.1:4723/status | grep '"ready":true'; then
+              echo "✅ Appium Server đã sẵn sàng!"
+              break
+            fi
+            sleep 2
+          done
+
+      - name: 6. Cache Android AVD Image (Tối ưu thời gian tải)
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ github.event.inputs.android_api || '30' }}
+
+      - name: 7. Launch Android Emulator & Execute Tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ github.event.inputs.android_api || '30' }}
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          avd-name: test_emulator
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          script: |
+            echo "📱 Danh sách thiết bị kết nối qua adb:"
+            adb devices
+            
+            echo "🚀 Bắt đầu thực thi Android Test Suite..."
+            mvn clean test \
+              -DsuiteXmlFile="src/test/resources/testng.xml" \
+              -Dplatform="android_emulator" \
+              -Dandroid.emulator.udid=emulator-5554 \
+              -DTARGET=local \
+              -Dappium.url=http://127.0.0.1:4723 \
+              -Dmaven.test.failure.ignore=true
+
+      - name: 8. Generate Allure Report
+        if: always()
+        run: |
+          mvn allure:report -Dmaven.test.failure.ignore=true
+
+      - name: 9. Upload Android Test Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-artifacts
+          path: |
+            target/surefire-reports/
+            target/site/allure-maven-plugin/
+            target/allure-results/
+            exports/ExtentReports/
+            appium-android.log
+            logs/
+          retention-days: 14
+
+  # =========================================================================
+  # JOB 2: CHẠY MOBILE TEST TRÊN IOS SIMULATOR (XCUITEST)
+  # =========================================================================
+  ios-test:
+    name: Run iOS Tests (XCUITest)
+    # Chạy khi người dùng chọn 'ios_simulator' hoặc 'both'
+    if: github.event.inputs.platform == 'ios_simulator' || github.event.inputs.platform == 'both'
+    # Sử dụng macOS runner có sẵn Xcode & iOS Simulators cài sẵn
+    runs-on: macos-14
+    timeout-minutes: 40
+
+    steps:
+      - name: 1. Checkout Source Code
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: 2. Set up Java JDK 17 (Eclipse Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+
+      - name: 3. Set up Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 4. Install Appium & XCUITest Driver
+        run: |
+          echo "📦 Cài đặt Appium và XCUITest driver dành riêng cho iOS..."
+          npm install -g appium
+          appium driver install xcuitest
+          appium --version
+          appium driver list
+
+      - name: 5. Boot iOS Simulator
+        run: |
+          echo "🔍 Tìm kiếm iOS Simulator trên hệ thống..."
+          TARGET_DEVICE="${{ github.event.inputs.ios_device || 'iPhone 15' }}"
+          echo "Mục tiêu: $TARGET_DEVICE"
+          
+          # Tìm UDID của iPhone phù hợp từ danh sách có sẵn của Xcode
+          UDID=$(xcrun simctl list devices available | grep -m 1 "$TARGET_DEVICE" | awk -F '[()]' '{print $(NF-1)}')
+          
+          if [ -z "$UDID" ]; then
+            echo "⚠️ Không tìm thấy $TARGET_DEVICE, tự động chọn iPhone có sẵn đầu tiên..."
+            UDID=$(xcrun simctl list devices available | grep "iPhone" | head -n 1 | awk -F '[()]' '{print $(NF-1)}')
+          fi
+          
+          echo "✅ Đã chọn Simulator UDID: $UDID"
+          echo "IOS_UDID=$UDID" >> $GITHUB_ENV
+          
+          echo "🚀 Đang khởi động iOS Simulator ngầm..."
+          xcrun simctl boot "$UDID" || true
+          
+          echo "⏳ Chờ iOS Simulator hoàn tất quá trình Boot..."
+          xcrun simctl bootstatus "$UDID" -b
+          echo "🎉 iOS Simulator đã khởi động thành công và sẵn sàng nhận lệnh!"
+
+      - name: 6. Start Appium Server in Background
+        run: |
+          echo "🚀 Khởi chạy Appium Server port 4723..."
+          appium --port 4723 --log appium-ios.log --relaxed-security &
+          
+          echo "⏳ Chờ Appium Server phản hồi..."
+          for i in {1..30}; do
+            if curl -s http://127.0.0.1:4723/status | grep '"ready":true'; then
+              echo "✅ Appium Server đã sẵn sàng!"
+              break
+            fi
+            sleep 2
+          done
+
+      - name: 7. Execute iOS Test Suite
+        run: |
+          echo "📱 Bắt đầu thực thi iOS Tests trên Simulator: $IOS_UDID"
+          echo "File ứng dụng: apps/MyDemoApp.app"
+          
+          mvn clean test \
+            -DsuiteXmlFile="src/test/resources/testng-ios.xml" \
+            -Dplatform="ios_simulator" \
+            -Dios.sim.udid="$IOS_UDID" \
+            -Dios.udid="$IOS_UDID" \
+            -DTARGET=local \
+            -Dappium.url=http://127.0.0.1:4723 \
+            -Dmaven.test.failure.ignore=true
+
+      - name: 8. Generate Allure Report
+        if: always()
+        run: |
+          mvn allure:report -Dmaven.test.failure.ignore=true
+
+      - name: 9. Upload iOS Test Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-test-artifacts
+          path: |
+            target/surefire-reports/
+            target/site/allure-maven-plugin/
+            target/allure-results/
+            exports/ExtentReports/
+            appium-ios.log
+            logs/
+          retention-days: 14
