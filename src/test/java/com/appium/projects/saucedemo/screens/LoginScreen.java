@@ -12,7 +12,8 @@ import org.openqa.selenium.By;
  * LoginScreen đại diện cho màn hình đăng nhập của SauceDemo App.
  * Kế thừa CommonScreen (BaseScreen > CommonScreen > Screen cụ thể).
  * Tuân thủ nghiêm ngặt:
- * 1. Mọi By locator khai báo tập trung ở đầu class (KHÔNG khai báo trong method).
+ * 1. Mọi By locator khai báo tập trung ở đầu class (KHÔNG khai báo trong
+ * method).
  * 2. Nội dung text/nhãn tham chiếu từ LoginScreenModel.
  * 3. Cung cấp các method verify... gắn @Step cho Allure Report đẹp mắt.
  */
@@ -20,24 +21,21 @@ public class LoginScreen extends CommonScreen {
 
     private final By txtUsername = loc(
             AppiumBy.accessibilityId("Username input field"),
-            AppiumBy.iOSClassChain("**/XCUIElementTypeTextField")
-    );
+            AppiumBy.iOSClassChain("**/XCUIElementTypeTextField"));
     private final By txtPassword = loc(
             AppiumBy.accessibilityId("Password input field"),
-            AppiumBy.iOSClassChain("**/XCUIElementTypeSecureTextField")
-    );
+            AppiumBy.iOSClassChain("**/XCUIElementTypeSecureTextField"));
     private final By btnLogin = loc(
             AppiumBy.accessibilityId("Login button"),
-            AppiumBy.accessibilityId("Login")
-    );
+            AppiumBy.accessibilityId("Login"));
     private final By lblErrorMessage = loc(
             AppiumBy.accessibilityId("generic-error-message"),
-            AppiumBy.iOSNsPredicateString("label CONTAINS 'locked' OR label CONTAINS 'Sorry' OR label CONTAINS 'match' OR label CONTAINS 'required' OR label CONTAINS 'Provided'")
-    );
+            AppiumBy.iOSNsPredicateString(
+                    "label CONTAINS 'locked' OR label CONTAINS 'Sorry' OR label CONTAINS 'match' OR label CONTAINS 'required' OR label CONTAINS 'Provided'"));
     private final By btnDismissSavePrompt = loc(
             AppiumBy.androidUIAutomator("new UiSelector().textContains(\"Never\").textContains(\"Cancel\")"),
-            AppiumBy.iOSNsPredicateString("label == 'Để sau' OR label == 'Not Now' OR label == 'Never' OR label == 'Lưu'")
-    );
+            AppiumBy.iOSNsPredicateString(
+                    "label == 'Để sau' OR label == 'Not Now' OR label == 'Never' OR label == 'Lưu'"));
 
     public boolean isLoginScreenDisplayed() {
         return isElementDisplayed(txtUsername) && isElementDisplayed(btnLogin);
@@ -116,22 +114,26 @@ public class LoginScreen extends CommonScreen {
 
     @Step("Xác minh màn hình Đăng nhập hiển thị đầy đủ trường nhập")
     public LoginScreen verifyLoginScreenDisplayed() {
-        verifyTrue(isLoginScreenDisplayed(), "Màn hình Login không hiển thị đúng các trường nhập", FailureHandling.STOP_ON_FAILURE);
+        verifyTrue(isLoginScreenDisplayed(), "Màn hình Login không hiển thị đúng các trường nhập",
+                FailureHandling.STOP_ON_FAILURE);
         return this;
     }
 
     @Step("Xác minh thông báo lỗi hiển thị trên màn hình")
     public LoginScreen verifyErrorMessageDisplayed() {
-        verifyTrue(isErrorMessageDisplayed(), "Không hiển thị thông báo lỗi trên màn hình", FailureHandling.STOP_ON_FAILURE);
+        verifyTrue(isErrorMessageDisplayed(), "Không hiển thị thông báo lỗi trên màn hình",
+                FailureHandling.STOP_ON_FAILURE);
         return this;
     }
 
     @Step("Xác minh nội dung thông báo lỗi chứa từ khóa: '{expectedKeyword}'")
     public LoginScreen verifyErrorMessageContains(String expectedKeyword) {
-        verifyTrue(isErrorMessageDisplayed(), "Không hiển thị thông báo lỗi trên màn hình", FailureHandling.STOP_ON_FAILURE);
+        verifyTrue(isErrorMessageDisplayed(), "Không hiển thị thông báo lỗi trên màn hình",
+                FailureHandling.STOP_ON_FAILURE);
         String actualMsg = getErrorMessage().toLowerCase();
         verifyTrue(actualMsg.contains(expectedKeyword.toLowerCase()),
-                String.format("Nội dung thông báo lỗi không chứa từ khóa kỳ vọng! Actual='%s', Expected='%s'", actualMsg, expectedKeyword),
+                String.format("Nội dung thông báo lỗi không chứa từ khóa kỳ vọng! Actual='%s', Expected='%s'",
+                        actualMsg, expectedKeyword),
                 FailureHandling.STOP_ON_FAILURE);
         return this;
     }

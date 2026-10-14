@@ -121,13 +121,7 @@ jobs:
             adb devices
             
             echo "🚀 Bắt đầu thực thi Android Test Suite..."
-            mvn clean test \
-              -DsuiteXmlFile="src/test/resources/testng.xml" \
-              -Dplatform="android_emulator" \
-              -Dandroid.emulator.udid=emulator-5554 \
-              -DTARGET=local \
-              -Dappium.url=http://127.0.0.1:4723 \
-              -Dmaven.test.failure.ignore=true
+            mvn clean test -DsuiteXmlFile=src/test/resources/testng.xml -Dplatform=android_emulator -Dandroid.emulator.udid=emulator-5554 -DTARGET=local -Dappium.url=http://127.0.0.1:4723 -Dmaven.test.failure.ignore=true
 
       - name: 9. Get Allure History from gh-pages
         uses: actions/checkout@v4
@@ -149,6 +143,7 @@ jobs:
         run: |
           mvn allure:report -Dmaven.test.failure.ignore=true
           cp -r target/allure-results/history target/site/allure-maven-plugin/ || true
+          touch target/site/allure-maven-plugin/.nojekyll
 
       - name: 12. Upload Android Test Artifacts
         if: always()
@@ -250,14 +245,7 @@ jobs:
           echo "📱 Bắt đầu thực thi iOS Tests trên Simulator: $IOS_UDID"
           echo "File ứng dụng: apps/MyDemoApp.app"
           
-          mvn clean test \
-            -DsuiteXmlFile="src/test/resources/testng-ios.xml" \
-            -Dplatform="ios_simulator" \
-            -Dios.sim.udid="$IOS_UDID" \
-            -Dios.udid="$IOS_UDID" \
-            -DTARGET=local \
-            -Dappium.url=http://127.0.0.1:4723 \
-            -Dmaven.test.failure.ignore=true
+          mvn clean test -DsuiteXmlFile=src/test/resources/testng-ios.xml -Dplatform=ios_simulator -Dios.sim.udid="$IOS_UDID" -Dios.udid="$IOS_UDID" -DTARGET=local -Dappium.url=http://127.0.0.1:4723 -Dmaven.test.failure.ignore=true
 
       - name: 8. Get Allure History from gh-pages
         uses: actions/checkout@v4
@@ -279,6 +267,7 @@ jobs:
         run: |
           mvn allure:report -Dmaven.test.failure.ignore=true
           cp -r target/allure-results/history target/site/allure-maven-plugin/ || true
+          touch target/site/allure-maven-plugin/.nojekyll
 
       - name: 11. Upload iOS Test Artifacts
         if: always()
