@@ -36,6 +36,10 @@ on:
           - '30'
           - '31'
 
+# Cấp quyền ghi mã nguồn để GitHub Actions tự động tạo và đẩy Allure Report lên nhánh gh-pages
+permissions:
+  contents: write
+
 jobs:
   # =========================================================================
   # JOB 1: CHẠY MOBILE TEST TRÊN ANDROID EMULATOR (UIAUTOMATOR2)
@@ -44,8 +48,6 @@ jobs:
     name: Run Android Tests (UiAutomator2)
     # Chạy khi push/PR hoặc khi người dùng chọn 'android_emulator' hoặc 'both'
     if: github.event_name != 'workflow_dispatch' || github.event.inputs.platform == 'android_emulator' || github.event.inputs.platform == 'both'
-    # Sử dụng ubuntu-latest: Luôn có sẵn máy ngay lập tức (pick trong 3 giây), 
-    # hoàn toàn miễn phí cho cả Private và Public repo, có KVM tăng tốc Android Emulator.
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -127,12 +129,28 @@ jobs:
               -Dappium.url=http://127.0.0.1:4723 \
               -Dmaven.test.failure.ignore=true
 
-      - name: 9. Generate Allure Report
+      - name: 9. Get Allure History from gh-pages
+        uses: actions/checkout@v4
+        if: always()
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: 10. Copy Allure History
+        if: always()
+        continue-on-error: true
+        run: |
+          mkdir -p target/allure-results/history
+          cp -Rr gh-pages/history/* target/allure-results/history/ || true
+
+      - name: 11. Generate Allure Report HTML
         if: always()
         run: |
           mvn allure:report -Dmaven.test.failure.ignore=true
+          cp -r target/allure-results/history target/site/allure-maven-plugin/ || true
 
-      - name: 10. Upload Android Test Artifacts
+      - name: 12. Upload Android Test Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -146,6 +164,14 @@ jobs:
             logs/
           retention-days: 14
 
+      - name: 13. Deploy Allure Report to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: target/site/allure-maven-plugin
+
   # =========================================================================
   # JOB 2: CHẠY MOBILE TEST TRÊN IOS SIMULATOR (XCUITEST)
   # =========================================================================
@@ -153,7 +179,6 @@ jobs:
     name: Run iOS Tests (XCUITest)
     # Chạy khi người dùng chọn 'ios_simulator' hoặc 'both'
     if: github.event.inputs.platform == 'ios_simulator' || github.event.inputs.platform == 'both'
-    # Sử dụng macos-latest (Apple Silicon M1/M2)
     runs-on: macos-latest
     timeout-minutes: 40
 
@@ -189,7 +214,6 @@ jobs:
           TARGET_DEVICE="${{ github.event.inputs.ios_device || 'iPhone 15' }}"
           echo "Mục tiêu: $TARGET_DEVICE"
           
-          # Tìm UDID của iPhone phù hợp từ danh sách có sẵn của Xcode
           UDID=$(xcrun simctl list devices available | grep -m 1 "$TARGET_DEVICE" | awk -F '[()]' '{print $(NF-1)}')
           
           if [ -z "$UDID" ]; then
@@ -235,12 +259,28 @@ jobs:
             -Dappium.url=http://127.0.0.1:4723 \
             -Dmaven.test.failure.ignore=true
 
-      - name: 8. Generate Allure Report
+      - name: 8. Get Allure History from gh-pages
+        uses: actions/checkout@v4
+        if: always()
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: 9. Copy Allure History
+        if: always()
+        continue-on-error: true
+        run: |
+          mkdir -p target/allure-results/history
+          cp -Rr gh-pages/history/* target/allure-results/history/ || true
+
+      - name: 10. Generate Allure Report HTML
         if: always()
         run: |
           mvn allure:report -Dmaven.test.failure.ignore=true
+          cp -r target/allure-results/history target/site/allure-maven-plugin/ || true
 
-      - name: 9. Upload iOS Test Artifacts
+      - name: 11. Upload iOS Test Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -253,3 +293,11 @@ jobs:
             appium-ios.log
             logs/
           retention-days: 14
+
+      - name: 12. Deploy Allure Report to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: target/site/allure-maven-plugin
