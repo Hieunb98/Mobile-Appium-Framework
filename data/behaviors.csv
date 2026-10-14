@@ -1,5 +1,5 @@
 "Epic","Feature","Story","FAILED","BROKEN","PASSED","SKIPPED","UNKNOWN"
-"SauceLabs My Demo App","Authentication Feature","Validation để trống form","0","0","1","0","0"
-"SauceLabs My Demo App","Authentication Feature","Đăng nhập tài khoản không tồn tại","0","0","1","0","0"
-"SauceLabs My Demo App","Authentication Feature","Đăng nhập hợp lệ","0","0","1","0","0"
 "SauceLabs My Demo App","Authentication Feature","Đăng nhập tài khoản bị khóa","1","0","0","0","0"
+"SauceLabs My Demo App","Authentication Feature","Đăng nhập hợp lệ","0","0","1","0","0"
+"SauceLabs My Demo App","Authentication Feature","Đăng nhập tài khoản không tồn tại","0","0","1","0","0"
+"SauceLabs My Demo App","Authentication Feature","Validation để trống form","0","0","1","0","0"
