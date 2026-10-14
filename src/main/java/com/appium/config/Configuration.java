@@ -191,6 +191,10 @@ public interface Configuration extends Config, Accessible {
     @DefaultValue("true")
     boolean SCREENSHOT_ON_FAILURE();
 
+    @Key("screenshot.on.pass")
+    @DefaultValue("true")
+    boolean SCREENSHOT_ON_PASS();
+
     @Key("retry.count")
     @DefaultValue("1")
     int RETRY_COUNT();

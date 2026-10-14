@@ -3,8 +3,11 @@ package com.appium.base;
 import com.appium.constants.FrameworkConstants;
 import com.appium.driver.DriverManager;
 import com.appium.enums.FailureHandling;
+import com.appium.helpers.CaptureHelpers;
 import com.appium.reports.AllureManager;
+import com.appium.reports.ExtentReportManager;
 import com.appium.utils.LogUtils;
+import com.aventstack.extentreports.Status;
 import io.appium.java_client.AppiumBy;
 import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.HidesKeyboard;
@@ -440,5 +443,21 @@ public abstract class BaseScreen {
             LogUtils.warn("Không có Alert hiển thị: " + e.getMessage());
             return "";
         }
+    }
+
+    /**
+     * Chụp ảnh màn hình tại bước hiện tại làm bằng chứng kiểm thử (Test Evidence).
+     * Tự động lưu file vật lý vào thư mục exports và đính kèm vào Allure Report + ExtentReport.
+     *
+     * @param stepName Tên bước kiểm thử hoặc hành động cần ghi nhận
+     * @return chính đối tượng Screen con hiện tại (hỗ trợ Fluent Chaining)
+     */
+    @Step("📸 Chụp ảnh bằng chứng màn hình: {stepName}")
+    @SuppressWarnings("unchecked")
+    public <T extends BaseScreen> T takeScreenshot(String stepName) {
+        LogUtils.info("📸 Chụp ảnh bằng chứng kiểm thử: " + stepName);
+        CaptureHelpers.captureScreenshot(stepName);
+        ExtentReportManager.addScreenShot(Status.INFO, "Bằng chứng: " + stepName);
+        return (T) this;
     }
 }

@@ -78,6 +78,7 @@ public final class FrameworkConstants {
     // Features
     public static final boolean RECORD_VIDEO_ON_FAILURE = CONFIG.RECORD_VIDEO_ON_FAILURE();
     public static final boolean SCREENSHOT_ON_FAILURE = CONFIG.SCREENSHOT_ON_FAILURE();
+    public static final boolean SCREENSHOT_ON_PASS = CONFIG.SCREENSHOT_ON_PASS();
     public static final int RETRY_COUNT = CONFIG.RETRY_COUNT();
 
     // Đường dẫn xuất báo cáo / hình ảnh / video

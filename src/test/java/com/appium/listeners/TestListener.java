@@ -75,10 +75,21 @@ public class TestListener implements ITestListener {
         ExtentReportManager.pass("Test case: " + result.getName() + " PASSED.");
 
         AppiumDriver driver = DriverManager.getDriver();
-        if (driver instanceof CanRecordScreen) {
+        if (driver != null) {
             try {
-                ((CanRecordScreen) driver).stopRecordingScreen();
-            } catch (Exception ignored) {}
+                // Tự động chụp ảnh bằng chứng kiểm thử khi test case PASS thành công
+                if (FrameworkConstants.SCREENSHOT_ON_PASS) {
+                    CaptureHelpers.captureScreenshot(result.getName() + "_PASSED");
+                    ExtentReportManager.addScreenShot(Status.PASS, "📸 Bằng chứng kiểm thử THÀNH CÔNG: " + result.getName());
+                    LogUtils.info("Đã chụp và đính kèm ảnh bằng chứng PASSED vào Allure Report và ExtentReport");
+                }
+
+                if (driver instanceof CanRecordScreen) {
+                    ((CanRecordScreen) driver).stopRecordingScreen();
+                }
+            } catch (Exception e) {
+                LogUtils.warn("Không thể chụp ảnh hoặc dừng quay video khi test thành công: " + e.getMessage());
+            }
         }
     }
 
