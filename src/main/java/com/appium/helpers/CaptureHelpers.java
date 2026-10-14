@@ -38,7 +38,8 @@ public final class CaptureHelpers {
             File source = ts.getScreenshotAs(OutputType.FILE);
             byte[] screenshotBytes = ts.getScreenshotAs(OutputType.BYTES);
 
-            // Đính kèm Allure Report
+            // Đính kèm trực tiếp vào Allure Report bằng Allure API (đảm bảo 100% hiển thị)
+            io.qameta.allure.Allure.addAttachment(screenshotName, "image/png", new java.io.ByteArrayInputStream(screenshotBytes), ".png");
             AllureManager.saveScreenshotPNG(screenshotName, screenshotBytes);
 
             // Lưu file vật lý vào thư mục exports

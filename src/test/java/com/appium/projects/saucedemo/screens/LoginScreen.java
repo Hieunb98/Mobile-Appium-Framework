@@ -29,7 +29,7 @@ public class LoginScreen extends CommonScreen {
             AppiumBy.accessibilityId("Login button"),
             AppiumBy.accessibilityId("Login"));
     private final By lblErrorMessage = loc(
-            AppiumBy.accessibilityId("generic-error-message"),
+            AppiumBy.xpath("//*[@content-desc='generic-error-message']//android.widget.TextView | //*[@content-desc='generic-error-message']"),
             AppiumBy.iOSNsPredicateString(
                     "label CONTAINS 'locked' OR label CONTAINS 'Sorry' OR label CONTAINS 'match' OR label CONTAINS 'required' OR label CONTAINS 'Provided'"));
     private final By btnDismissSavePrompt = loc(
@@ -105,7 +105,14 @@ public class LoginScreen extends CommonScreen {
     }
 
     public String getErrorMessage() {
-        return getText(lblErrorMessage);
+        String msg = getText(lblErrorMessage);
+        if (msg == null || msg.trim().isEmpty()) {
+            msg = getAttribute(lblErrorMessage, "text");
+        }
+        if (msg == null || msg.trim().isEmpty()) {
+            msg = getAttribute(lblErrorMessage, "content-desc");
+        }
+        return msg != null ? msg : "";
     }
 
     public boolean isErrorMessageDisplayed() {
